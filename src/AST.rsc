@@ -12,8 +12,8 @@ data AForm(loc src = |tmp:///|)
   ; 
 
 data AQuestion(loc src = |tmp:///|)
-  = question(str quest, str varName, AType varType)
-  | compQuestion(str quest, str varName, AType varType, AExpr varExpr)
+  = question(str quest, AId varId, AType varType)
+  | compQuestion(str quest, AId varId, AType varType, AExpr varExpr)
   | block(list[AQuestion] block)
   | ifThen(AExpr guard, AQuestion ifBlock, AQuestion elseBlock) //TODO: just question?
   | ifElse(AExpr guard, AQuestion ifBlock) 

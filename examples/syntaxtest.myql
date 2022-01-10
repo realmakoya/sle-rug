@@ -12,7 +12,7 @@ form syntaxTest {
 			} else {
 				"String comp:" str_comp: string = "Abc"
 			}
-			if (true) {
+			if (true || false) {
 			
 			}
 		}
