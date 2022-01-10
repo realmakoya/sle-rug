@@ -40,7 +40,7 @@ syntax Expr
   > left Expr "/" Expr //TODO: priorities
   > left Expr "+" Expr
   > left Expr "-" Expr
-  > left Expr "\>" Expr
+  > left Expr "\>" Expr //TODO: non assoc
   > left Expr "\<" Expr
   > left Expr "\<=" Expr
   > left Expr "\>=" Expr
