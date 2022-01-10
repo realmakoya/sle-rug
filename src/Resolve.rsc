@@ -31,5 +31,5 @@ Use uses(AForm f) {
 
 Def defs(AForm f) {
   return { <varId.name, varId.src> | /question(_, AId varId, _) := f} +
-  			{<q.varId.name, q.varId.src> |/q:compQuestion(_, AId varId, _, _) := f}; 
+  			{<varId.name, varId.src> |/compQuestion(_, AId varId, _, _) := f}; 
 }
