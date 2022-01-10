@@ -57,7 +57,7 @@ syntax Type
   | "boolean" //TODO: any things like !>>?
   ;  
   
-lexical Str = @category="StringLiteral" [\"] ![\"]* [\"]; ///TODO: better , !>>
+lexical Str = @category="StringLiteral" [\"] ![\"]* [\"]; ///TODO: better , !>> Not keyword?
 
 lexical Int = ([\-]?[1-9][0-9]*)|[0];
  

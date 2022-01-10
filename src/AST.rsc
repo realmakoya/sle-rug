@@ -12,6 +12,11 @@ data AForm(loc src = |tmp:///|)
   ; 
 
 data AQuestion(loc src = |tmp:///|)
+  = question(str quest, str varName, AType varType)
+  | question(str quest, str varName, AType varType, AExpr expr)
+  | question(list[AQuestion] block)
+  | question(AExpr guard, list[AQuestion] ifBlock, list[AQuestion] elseBlock)
+  | question(AExpr guard, list[AQuestion] ifBlock) 
   ; 
 
 data AExpr(loc src = |tmp:///|)

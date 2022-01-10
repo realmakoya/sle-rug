@@ -1,0 +1,17 @@
+form syntaxTest {
+	"Testing syntax?" answer: string
+	
+	{
+		"Block question:" bl_answer: boolean
+		
+		if (bl_anwer) {
+			"Ask block if:" if_answer: integer
+		} else {
+			if ((if_answer <= (2 - 19) * 55 / 8) && bl_answer || (answer == "abc") && 55 != 56) {
+				"Computed answer:" comp_answer: integer = if_answer - 55 * 84
+			} else {
+				"String comp:" str_comp: string = "Abc"
+			}
+		}
+	}
+}
