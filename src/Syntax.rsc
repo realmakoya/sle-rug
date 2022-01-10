@@ -12,11 +12,11 @@ start syntax Form
 
 // TODO: question, computed question, block, if-then-else, if-then
 syntax Question
-  = @Foldable StrLiteral Id ":" Type //TODO: str
-  | StrLiteral Id ":" Type "=" Expr 
-  | Block
-  | "if" "(" Expr ")" Block "else" Block
-  | "if" "(" Expr ")" Block
+  = @Foldable Str Id ":" Type //TODO: str; Seperate production for Var?
+  | @Foldable Str Id ":" Type "=" Expr 
+  | @Foldable Block
+  | @Foldable "if" "(" Expr ")" Block "else" Block
+  | @Foldable "if" "(" Expr ")" Block //TODO: foldable
   ; 
   
 syntax Block
@@ -26,11 +26,13 @@ syntax Block
 // TODO: +, -, *, /, &&, ||, !, >, <, <=, >=, ==, !=, literals (bool, int, str)
 // Think about disambiguation using priorities and associativity
 // and use C/Java style precedence rules (look it up on the internet)
+// Using associativity rules: https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html
+// and https://introcs.cs.princeton.edu/java/11precedence/
 syntax Expr 
   = Id \ "true" \ "false" // true/false are reserved keywords.
-  | StrLiteral
-  | IntLiteral
-  | BoolLiteral
+  | Str
+  | Int
+  | Bool
   | bracket "(" Expr ")"
   > right "!" Expr
   | right "-" Expr
@@ -50,22 +52,17 @@ syntax Expr
   
   
 syntax Type
-  = Bool
-  | Str
-  | Int
+  = "string"
+  | "integer"
+  | "boolean" //TODO: any things like !>>?
   ;  
   
-lexical Str = "string"; ///TODO: better , !>>
+lexical Str = @category="StringLiteral" [\"] ![\"]* [\"]; ///TODO: better , !>>
 
-lexical Int = "integer"; // 
+lexical Int = ([\-]?[1-9][0-9]*)|[0];
+ 
+lexical Bool = "true" | "false"; 
 
-lexical Bool = "boolean"; 
-
-lexical StrLiteral = @category="StringLiteral" [\"] ![\"]* [\"];
-
-lexical IntLiteral = ([\-]?[1-9][0-9]*)|[0];
-
-lexical BoolLiteral = "true" | "false";
 
 
 
