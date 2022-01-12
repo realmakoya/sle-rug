@@ -31,8 +31,8 @@ AQuestion cst2ast(quest:Question q) {
   	case (Question)`<Str q> <Id vId> : <Type t>`: return question(unquote("<q>"), id("<vId>", src=vId@\loc), cst2ast(t), src=quest@\loc);
   	case (Question)`<Str q> <Id vId> : <Type t> = <Expr e>`: return compQuestion(unquote("<q>"), id("<vId>", src=vId@\loc), cst2ast(t), cst2ast(e), src=quest@\loc);
  	case (Question)`<Block b>`: return cst2ast(b);
-	case (Question)`if (<Expr e>) <Block b1> else <Block b2>`: return ifThen(cst2ast(e), cst2ast(b1), cst2ast(b2));
-	case (Question)`if (<Expr e>) <Block b>`: return ifElse(cst2ast(e), cst2ast(b));
+	case (Question)`if (<Expr e>) <Block b1> else <Block b2>`: return ifElse(cst2ast(e), cst2ast(b1), cst2ast(b2));
+	case (Question)`if (<Expr e>) <Block b>`: return ifThen(cst2ast(e), cst2ast(b));
 	default: throw "Unhandled question: <q>"; //TODO: src
 	}
 }
