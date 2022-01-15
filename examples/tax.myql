@@ -8,6 +8,9 @@ form taxOfficeExample {
   "Did you enter a loan?"
     hasMaintLoan: boolean
     
+  "Did you enter a loan?"
+    hasMaintLoan: boolean
+    
   "Did you sell a house in 2010?"
     hasSoldHouse: boolean
    
@@ -17,7 +20,7 @@ form taxOfficeExample {
     "Private debts for the sold house:"
       privateDebt: integer
     "Value residue:"
-      valueResidue: integer = sellingPrice - privateDebt * 2 
+      valueResidue: integer = true //TODO: doesn't work with true?
       
   }
 }

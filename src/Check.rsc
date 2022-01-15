@@ -109,6 +109,15 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   return outMsgs; 
 }
 
+set[Message] checkBinaryOp(loc src, str typeName, Type \type, AExpr lhs, AExpr rhs, TEnv tenv, UseDef useDef) {
+	set[Message] outMsgs = {};
+	outMsgs += check(lhs, tenv, useDef);
+	outMsgs += check(rhs, tenv, useDef);
+	outMsgs += { error("Operands must be of the same type", src) | typeOf(lhs, tenv, useDef) != typeOf(rhs, tenv,useDef)};
+	outMsgs += { error("Operands must be of type: <typeName>", src) | \type != tunknown() && typeOf(lhs, tenv, useDef) == \type};
+	return outMsgs;
+}
+
 // Check operand compatibility with operators.
 // E.g. for an addition node add(lhs, rhs), 
 //   the requirement is that typeOf(lhs) == typeOf(rhs) == tint()
@@ -122,29 +131,29 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 	case neg(AExpr x):
 	  msgs += { error("Can only negate an integer", x.src) | typeOf(x, tenv, useDef) != tint()};
 	 case mul(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only multiply integers", lhs.src) | !(typeOf(lhs, tenv, useDef) == tint() && typeOf(lhs, tenv, useDef) == typeOf(rhs, tenv, useDef))};
+	  msgs += checkBinaryOp(e.src, "integer", tint(), lhs, rhs, tenv, useDef);
 	 case div(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only divide integers", lhs.src) | !(typeOf(lhs, tenv, useDef) == tint() && typeOf(lhs, tenv, useDef) == typeOf(rhs, tenv, useDef))};
+	  msgs += checkBinaryOp(e.src, "integer", tint(), lhs, rhs, tenv, useDef);
 	 case add(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only add integers", lhs.src) | !(typeOf(lhs, tenv, useDef) == tint() && typeOf(lhs, tenv, useDef) == typeOf(rhs, tenv, useDef))};
+	  msgs += checkBinaryOp(e.src, "integer", tint(), lhs, rhs, tenv, useDef);
 	 case sub(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only subtract integers", lhs.src) | !(typeOf(lhs, tenv, useDef) == tint() && typeOf(lhs, tenv, useDef) == typeOf(rhs, tenv, useDef))};
+	  msgs += checkBinaryOp(e.src, "integer", tint(), lhs, rhs, tenv, useDef);
 	 case gt(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only compare order of integers", lhs.src) | !(typeOf(lhs, tenv, useDef) == tint() && typeOf(lhs, tenv, useDef) == typeOf(rhs, tenv, useDef))};
+	  msgs += checkBinaryOp(e.src, "integer", tint(), lhs, rhs, tenv, useDef);
 	 case lt(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only compare order of integers", lhs.src) | !(typeOf(lhs, tenv, useDef) == tint() && typeOf(lhs, tenv, useDef) == typeOf(rhs, tenv, useDef))};
+	  msgs += checkBinaryOp(e.src, "integer", tint(), lhs, rhs, tenv, useDef);
 	 case lteq(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only compare order of integers", lhs.src) | !(typeOf(lhs, tenv, useDef) == tint() && typeOf(lhs, tenv, useDef) == typeOf(rhs, tenv, useDef))};
+	  msgs += checkBinaryOp(e.src, "integer", tint(), lhs, rhs, tenv, useDef);
 	 case gteq(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only compare order of integers", lhs.src) | !(typeOf(lhs, tenv, useDef) == tint() && typeOf(lhs, tenv, useDef) == typeOf(rhs, tenv, useDef))};
+	  msgs += checkBinaryOp(e.src, "integer", tint(), lhs, rhs, tenv, useDef);
 	 case eql(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only compare equality of similar types", lhs.src) | typeOf(lhs, tenv, useDef) != typeOf(rhs, tenv, useDef)};
+	  msgs += checkBinaryOp(e.src, "", tunknown(), lhs, rhs, tenv, useDef); //TODO: better way
 	 case neq(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only compare equality of similar types", lhs.src) | typeOf(lhs, tenv, useDef) != typeOf(rhs, tenv, useDef)};	 
+	  msgs += checkBinaryOp(e.src, "", tunknown(), lhs, rhs, tenv, useDef); //TODO: better way
 	 case and(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only perform \"and\" on booleans", lhs.src) | !(typeOf(lhs, tenv, useDef) == tbool() && typeOf(lhs, tenv, useDef) == typeOf(rhs, tenv, useDef))};
+	  msgs += checkBinaryOp(e.src, "boolean", tbool(), lhs, rhs, tenv, useDef);
 	 case or(AExpr lhs, AExpr rhs):
-	  msgs += { error("Can only perform \"or\" on booleans", lhs.src) | !(typeOf(lhs, tenv, useDef) == tbool() && typeOf(lhs, tenv, useDef) == typeOf(rhs, tenv, useDef))};
+	  msgs += checkBinaryOp(e.src, "boolean", tbool(), lhs, rhs, tenv, useDef);
   }
   return msgs; 
 }
@@ -164,7 +173,7 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
     case intlit(_):
       return tint();
     case boollit(_):
-      return tbool;
+      return tbool();
     case not(_):
 	  return tbool();
 	case neg(_):
