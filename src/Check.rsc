@@ -78,10 +78,12 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   	case question(str quest, AId varId, AType varType): {
   		outMsgs += checkDiffTypes(q.src, varId.name, getTypeFromAType(varType), tenv);
   		outMsgs += checkDupLabels(q.src, varId.name, quest, tenv);
+  		 outMsgs += checkDiffLabels(q.src, varId.name, quest, tenv);
   	}
   	case compQuestion(str quest, AId varId, AType varType, AExpr varExpr): {
   		outMsgs += checkDiffTypes(q.src, varId.name, getTypeFromAType(varType), tenv);
   		outMsgs += checkDupLabels(q.src, varId.name, quest, tenv);
+  		outMsgs += checkDiffLabels(q.src, varId.name, quest, tenv);
   		outMsgs += check(varExpr, tenv, useDef);
   		if (getTypeFromAType(varType) != typeOf(varExpr, tenv, useDef)) {
   			outMsgs += {error("Expression type not the same as computed question type", q.src)};
