@@ -13,6 +13,9 @@ form taxOfficeExample {
     
   "Did you sell a house in 2010?"
     hasSoldHouse: boolean
+    
+   "Did you sell a house in 2011?"
+    hasSoldHouse: boolean
    
   if (hasSoldHouse) {
     "What was the selling price?"
@@ -20,7 +23,7 @@ form taxOfficeExample {
     "Private debts for the sold house:"
       privateDebt: integer
     "Value residue:"
-      valueResidue: integer = true //TODO: doesn't work with true?
+      valueResidue: integer = sellingPrice - 1 //TODO: doesn't work with true?
       
   }
 }

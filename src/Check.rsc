@@ -62,6 +62,13 @@ set[Message] checkDupLabels(loc qLoc, str qName, str qLabel, TEnv tenv) {
 	return {};
 } 
 
+set[Message] checkDiffLabels(loc qLoc, str qName, str qLabel, TEnv tenv) {
+	if (<_, name, label, _> <- tenv, name == qName, label != qLabel) { //TODO: check type?
+		return {warning("Same question with different labels", qLoc)};
+	}
+	return {};
+}
+
 // - produce an error if there are declared questions with the same name but different types.
 // - duplicate labels should trigger a warning 
 // - the declared type computed questions should match the type of the expression.
@@ -114,7 +121,8 @@ set[Message] checkBinaryOp(loc src, str typeName, Type \type, AExpr lhs, AExpr r
 	outMsgs += check(lhs, tenv, useDef);
 	outMsgs += check(rhs, tenv, useDef);
 	outMsgs += { error("Operands must be of the same type", src) | typeOf(lhs, tenv, useDef) != typeOf(rhs, tenv,useDef)};
-	outMsgs += { error("Operands must be of type: <typeName>", src) | \type != tunknown() && typeOf(lhs, tenv, useDef) == \type};
+	//println("Type: <\type>, typeLHS: <typeOf(lhs, tenv, useDef)>, test: <\type != tunknown() && typeOf(lhs, tenv, useDef) != \type>");
+	outMsgs += { error("Operands must be of type: <typeName>", src) | \type != tunknown() && typeOf(lhs, tenv, useDef) != \type};
 	return outMsgs;
 }
 
