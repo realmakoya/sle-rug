@@ -21,7 +21,7 @@ form taxOfficeExample {
     "Private debts for the sold house:"
       privateDebt: integer
     "Value residue:"
-      valueResidue: integer = sellingPrice - 1 //TODO: doesn't work with true?
+      valueResidue: integer = sellingPrice - privateDebt //TODO: doesn't work with true?
       
   }
 }

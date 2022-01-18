@@ -66,7 +66,7 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
   // evaluate conditions for branching,
   // evaluate inp and computed questions to return updated VEnv
   VEnv newVEnv = venv;
-  switch (q) {
+  switch (q) { 
   	case question(_, AId varId, _): if (varId.name == inp.question) newVEnv[varId.name] = inp.\value;
   	case compQuestion(_, AId varId, _, AExpr varExpr): newVEnv[varId.name] = eval(varExpr, newVEnv);
   	case block(list[AQuestion] quests): {
@@ -78,7 +78,7 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
   		if (eval(guard, newVEnv).b) {
   			newVEnv = eval(ifBlock, inp, newVEnv);
   		} else {
-  			newVEnv = eval(elseBlock, inp, newVEnv);
+  			newVEnv = eval(elseBlock, inp, newVEnv); //TODO: update if not reach block?
   		}
   	}
   	case ifThen(AExpr guard, AQuestion ifBlock): {
