@@ -6,6 +6,8 @@ import Message; // see standard library
 import Set;
 import IO;
 
+//TODO: better showing of errors... show type of operands...
+
 data Type
   = tint()
   | tbool()
