@@ -219,6 +219,7 @@ str genSubmitForm(RefGraph refGraph, str frmName) {
 	return "function submitForm() {
 		   ' 	<varObj>
 		   '	document.getElementById(\"<frmName>\").reset();
+		   '	updateForm();
 		   '	return JSON.stringify($outputObj);
 		   '}";
 }
