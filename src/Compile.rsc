@@ -2,6 +2,7 @@ module Compile
 
 import AST;
 import Resolve;
+import String;
 import IO;
 import lang::html5::DOM; // see standard library
 
@@ -34,37 +35,40 @@ str getType(AType \type) {
 	}
 }
 
-HTML5Node genNode(question(str quest, AId varId, AType varType)) {
+HTML5Node genNode(question(str quest, AId varId, AType varType), str parId) {
 	return div(label(\for(varId.name), quest), 
-		input(\type(getType(varType)), name(varId.name), id(varId.name), onchange("updateForm()")));
+		input(\type(getType(varType)), name(varId.name), id(parId + ":" + varId.name), onchange("updateForm()")));
 }
 
-HTML5Node genNode(compQuestion(str quest, AId varId, AType varType, AExpr varExpr)) {
+HTML5Node genNode(compQuestion(str quest, AId varId, AType varType, AExpr varExpr), str parId) {
 	return div(label(\for(varId.name), quest), 
-		input(\type(getType(varType)), name(varId.name), id(varId.name), disabled("")));
+		input(\type(getType(varType)), name(varId.name), id(parId + ":" + varId.name), disabled("")));
 }
 
-HTML5Node genNode(block(list[AQuestion] quests)) {
+HTML5Node genNode(block(list[AQuestion] quests), str parId) {
 	list[HTML5Node] subQuests = [];
 	for (q <- quests) {
-		subQuests += genNode(q);
+		subQuests += genNode(q, parId);
 	}
 	return div(subQuests); //TODO: name?
 }
 
-HTML5Node genNode(ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock)) {
-	HTML5Node ifBlQuests = genNode(ifBlock);
-	list[HTML5Node] elseBlQuests = genNode(elseBlock);
+HTML5Node genNode(ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock), str parId) {
 	ifC += 1;
-	return section(id("@ifElse<ifC>"), 
-			section(id("@ifBlock<ifC>"), ifBlQuests), section(id("@elseBlock<ifC>"), elseBlQuests));
+	str ifId = parId + ":" + "@ifBlock<ifC>";
+	str elseId = parId + ":" + "@elseBlock<ifC>";
+	HTML5Node ifBlQuests = genNode(ifBlock, ifId);
+	HTML5Node elseBlQuests = genNode(elseBlock, elseId);
+	return section(id(parId + ":@ifElse<ifC>"), 
+			section(id(ifId), ifBlQuests), section(id(elseId), elseBlQuests));
 }
 
-HTML5Node genNode(ifThen(AExpr guard, AQuestion ifBlock)) {
-	HTML5Node ifBlQuests = genNode(ifBlock);
+HTML5Node genNode(ifThen(AExpr guard, AQuestion ifBlock), str parId) {
 	ifC += 1;
-	return section(id("@ifThen<ifC>"), 
-			section(id("@ifBlock<ifC>"), ifBlQuests));
+	str ifId = parId + ":" + "@ifBlock<ifC>";
+	HTML5Node ifBlQuests = genNode(ifBlock, ifId);
+	return section(id(parId + ":" + "@ifThen<ifC>"), 
+			section(id(ifId), ifBlQuests));
 }
 
 default HTML5Node genNode(AQuestion q) {
@@ -74,15 +78,16 @@ default HTML5Node genNode(AQuestion q) {
 list[HTML5Node] genForm(AForm f) {
 	list[HTML5Node] elems = [];
 	for (q <- f.questions) {
-		elems += genNode(q);
+		elems += genNode(q, "form");
 	}
 	return elems;
 }
 
 HTML5Node form2html(AForm f) {
+  ifC = 0;
   FORM = section(class("form"), form(genForm(f)));
   TEST = html(head(title(f.name), script(src(f.src[extension="js"].file))),
-  			body(FORM));
+  			body(onload("updateForm()"), FORM));
   //println(toString(TEST));
   TEST2 = html(head(title(f.name)), body(FORM)); //TODO: submit button
   //println(toString(TEST2));
@@ -98,19 +103,13 @@ str getDefaultType(AType varType) {
 	}
 }
 
-str initVars(AForm f) {
-	str varDecl = "";
-	visit(f) {
-		case question(_, AId varId, AType varType): {
-			//println(getDefaultType(varType));
-			varDecl += "var <varId.name> = <getDefaultType(varType)>;\n";
-		}
-		case compQuestion(_, AId varId, AType varType, _): {
-			varDecl += "var <varId.name> = <getDefaultType(varType)>;\n";
-		}
+str initVars(RefGraph refGraph) {
+	set[str] varDecls = {};
+	for (def <- refGraph<1>) {
+		varDecls += "var <def.name>;\n";
 	}
-	varDecl += "\n";
-	return varDecl;
+	//varDecl += "\n";
+	return ("" | it + varDecl | varDecl <- varDecls) + "\n";
 }
 
 str genExpr(AExpr expr) {
@@ -144,8 +143,8 @@ str compQuestions(AForm f) {
 	return "function updateCompQuests() {\n <updates> }\n";
 }
 
-str genAssign(AId varId, AType varType) {
-	str out = "var temp = document.getElementById(\"<varId.name>\");\n";
+str genAssign(AId varId, AType varType, str parId) {
+	str out = "var temp = document.getElementById(\"<parId>:<varId.name>\");\n";
 	switch(varType) {
 		case intType(): return out += "<varId.name> = Number(temp.value);\n";
 		case boolType(): return out += "<varId.name> = temp.checked;\n";
@@ -154,8 +153,8 @@ str genAssign(AId varId, AType varType) {
 	return out;
 }
 
-str genCompute(AId varId, AType varType, AExpr varExpr) {
-	str out = "var temp = document.getElementById(\"<varId.name>\");\n";
+str genCompute(AId varId, AType varType, AExpr varExpr, str parId) {
+	str out = "var temp = document.getElementById(\"<parId>:<varId.name>\");\n";
 	out += "<varId.name> = <genExpr(varExpr)>;\n";
 	switch(varType) {
 		case boolType():
@@ -164,56 +163,63 @@ str genCompute(AId varId, AType varType, AExpr varExpr) {
 	}
 }
 
+str genFormUpdate(question(_, AId varId, AType varType), str parId) {
+	return genAssign(varId, varType, parId);
+}
+
+str genFormUpdate(compQuestion(_, AId varId, AType varType, AExpr varExpr), str parId) {
+	return genCompute(varId, varType, varExpr, parId);
+}
+
+str genFormUpdate(block(list[AQuestion] quests), str parId) {
+	//println(quests);
+	return ("" | it + genFormUpdate(q, parId) | q <- quests) + "\n";
+}
+
+str genFormUpdate(ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock), str parId) {
+	ifC += 1;
+	str ifId = "<parId>:@ifBlock<ifC>";
+	str elseId = "<parId>:@elseBlock<ifC>";	
+	return  "var ifBl = document.getElementById(\"<ifId>\");
+			'var elseBl = document.getElementById(\"<elseId>\");
+			'if (<genExpr(guard)>) {
+			'	<genFormUpdate(ifBlock, ifId)>
+			'	ifBl.style.display = \"block\";
+			'	elseBl.style.display = \"none\";
+			'} else {
+			'	<genFormUpdate(elseBlock, elseId)>
+			'	ifBl.style.display = \"none\";
+			'	elseBl.style.display = \"block\";
+			'}\n";
+}
+
+str genFormUpdate(ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock), str parId) {
+	ifC += 1;
+	str ifId = "<parId>:@ifBlock<ifC>";
+	return  "var ifBl = document.getElementById(\"<ifId>\");
+			'if (<genExpr(guard)>) {
+			'	<genFormUpdate(ifBlock, ifId)>
+			'	ifBl.style.display = \"block\";
+			'} else {
+			'	ifBl.style.display = \"none\";
+			'}\n";
+}
+
 str genFormUpdate(AForm f) {
 	str updates = "";
-	int ifCount = 1;
-	visit(f) {
-		case question(_, AId varId, AType varType): {
-			updates += genAssign(varId, varType);
-		}
-		case compQuestion(_, AId varId, AType varType, AExpr varExpr): {
-			updates += genCompute(varId, varType, varExpr);
-		}
-		case ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock): {
-			println(guard);
-			updates += "";
-			
-			updates += "var temp = document.getElementById(\"@ifElse<ifCount>\");
-					   'if (<genExpr(guard)>) {
-					   'var temp = document.getElementById(\"@ifBlock<ifCount>\");	
-					   'temp.style.display = \"block\";	
-					   'var temp = document.getElementById(\"@elseBlock<ifCount>\");
-					   'temp.style.display = \"none\";	
-					   '} else {
-					   'var temp = document.getElementById(\"@elseBlock<ifCount>\");
-					   'temp.style.display = \"block\";	
-					   'var temp = document.getElementById(\"@ifBlock<ifCount>\");	
-					   'temp.style.display = \"none\";	
-					   }\n"; //TODO: only do calculations of computed based off conditionals
-			ifCount += 1;
-		}
-		case ifThen(AExpr guard, AQuestion ifBlock): {
-			updates += "";
-			
-			updates += "var temp = document.getElementById(\"@ifElse<ifCount>\");
-					   'if (<genExpr(guard)>) {
-					   'var temp = document.getElementById(\"@ifBlock<ifCount>\");	
-					   'temp.style.display = \"block\";	
-					   '} else {
-					   'var temp = document.getElementById(\"@ifBlock<ifCount>\");	
-					   'temp.style.display = \"none\";	
-					   }\n"; //TODO: only do calculations of computed based off conditionals
-			ifCount += 1;
-		}
+	for (q <- f.questions) {
+		updates += genFormUpdate(q, "form");
 	}
 	return "function updateForm() {\n console.log(\"updating\"); \n<updates>}\n";
 }
 
 str form2js(AForm f) {
+  ifC = 0;
   //str js = "const _input = document.querySelector(\'input\');
   //		   '_input.addEventListener(\'input\', updateInput);
   //		   'function updateInput(e) {
   //		   '	updateForm();
   //		   '}\n";
-  return initVars(f) + genFormUpdate(f);
+  RefGraph refGraph = resolve(f);
+  return initVars(refGraph) + genFormUpdate(f);
 }
