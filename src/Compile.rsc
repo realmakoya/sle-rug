@@ -75,23 +75,22 @@ default HTML5Node genNode(AQuestion q) {
 	return div();
 }
 
-list[HTML5Node] genForm(AForm f) {
-	list[HTML5Node] elems = [];
+list[value] genForm(AForm f) {
+	list[value] elems = [id(f.name)];
 	for (q <- f.questions) {
-		elems += genNode(q, "form");
+		elems += genNode(q, "$form");
 	}
+	elems += button("Submit", \type("button"), onclick("submitForm()"));
 	return elems;
 }
 
 HTML5Node form2html(AForm f) {
   ifC = 0;
-  FORM = section(class("form"), form(genForm(f)));
-  TEST = html(head(title(f.name), script(src(f.src[extension="js"].file))),
+  FORM = section(id("$form"), form(genForm(f)));
+  println(toString(FORM));
+  HTML = html(head(title(f.name), script(src(f.src[extension="js"].file))),
   			body(onload("updateForm()"), FORM));
-  //println(toString(TEST));
-  TEST2 = html(head(title(f.name)), body(FORM)); //TODO: submit button
-  //println(toString(TEST2));
-  return TEST;
+  return HTML;
 }
 
 str getDefaultType(AType varType) {
@@ -209,8 +208,19 @@ str genFormUpdate(ifThen(AExpr guard, AQuestion ifBlock), str parId) {
 }
 
 str genFormUpdate(AForm f) {
-	str updates = ("" | it + genFormUpdate(q, "form") | q <- f.questions);
-	return "function updateForm() {\n console.log(\"updating\"); \n<updates>}\n";
+	str updates = ("" | it + genFormUpdate(q, "$form") | q <- f.questions);
+	return "function updateForm() {\n<updates>}\n";
+}
+
+str genSubmitForm(RefGraph refGraph, str frmName) {
+	set[str] vars = {"<def.name>" | def <- refGraph<1>};
+	str varObj = "var $outputObj = new Object();\n";
+	varObj = (varObj | it + "$outputObj.<varName> = <varName>;\n" | varName <- vars);
+	return "function submitForm() {
+		   ' 	<varObj>
+		   '	document.getElementById(\"<frmName>\").reset();
+		   '	return JSON.stringify($outputObj);
+		   '}";
 }
 
 str form2js(AForm f) {
@@ -221,5 +231,5 @@ str form2js(AForm f) {
   //		   '	updateForm();
   //		   '}\n";
   RefGraph refGraph = resolve(f);
-  return initVars(refGraph) + genFormUpdate(f);
+  return initVars(refGraph) + genFormUpdate(f) + genSubmitForm(refGraph, f.name);
 }
