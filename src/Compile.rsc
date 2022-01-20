@@ -55,19 +55,19 @@ HTML5Node genNode(block(list[AQuestion] quests), str parId) {
 
 HTML5Node genNode(ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock), str parId) {
 	ifC += 1;
-	str ifId = parId + ":" + "@ifBlock<ifC>";
-	str elseId = parId + ":" + "@elseBlock<ifC>";
+	str ifId = parId + ":" + "$ifBlock<ifC>";
+	str elseId = parId + ":" + "$elseBlock<ifC>";
 	HTML5Node ifBlQuests = genNode(ifBlock, ifId);
 	HTML5Node elseBlQuests = genNode(elseBlock, elseId);
-	return section(id(parId + ":@ifElse<ifC>"), 
+	return section(id(parId + ":$ifElse<ifC>"), 
 			section(id(ifId), ifBlQuests), section(id(elseId), elseBlQuests));
 }
 
 HTML5Node genNode(ifThen(AExpr guard, AQuestion ifBlock), str parId) {
 	ifC += 1;
-	str ifId = parId + ":" + "@ifBlock<ifC>";
+	str ifId = parId + ":" + "$ifBlock<ifC>";
 	HTML5Node ifBlQuests = genNode(ifBlock, ifId);
-	return section(id(parId + ":" + "@ifThen<ifC>"), 
+	return section(id(parId + ":" + "$ifThen<ifC>"), 
 			section(id(ifId), ifBlQuests));
 }
 
@@ -144,22 +144,22 @@ str compQuestions(AForm f) {
 }
 
 str genAssign(AId varId, AType varType, str parId) {
-	str out = "var temp = document.getElementById(\"<parId>:<varId.name>\");\n";
+	str out = "var $temp = document.getElementById(\"<parId>:<varId.name>\");\n";
 	switch(varType) {
-		case intType(): return out += "<varId.name> = Number(temp.value);\n";
-		case boolType(): return out += "<varId.name> = temp.checked;\n";
-		default: return out += "<varId.name> = temp.value;\n";
+		case intType(): return out += "<varId.name> = Number($temp.value);\n";
+		case boolType(): return out += "<varId.name> = $temp.checked;\n";
+		default: return out += "<varId.name> = $temp.value;\n";
 	}
 	return out;
 }
 
 str genCompute(AId varId, AType varType, AExpr varExpr, str parId) {
-	str out = "var temp = document.getElementById(\"<parId>:<varId.name>\");\n";
+	str out = "var $temp = document.getElementById(\"<parId>:<varId.name>\");\n";
 	out += "<varId.name> = <genExpr(varExpr)>;\n";
 	switch(varType) {
 		case boolType():
-			return out += "temp.checked = <varId.name>;\n";
-		default: return out += "temp.value = <varId.name>;\n";
+			return out += "$temp.checked = <varId.name>;\n";
+		default: return out += "$temp.value = <varId.name>;\n";
 	}
 }
 
@@ -178,38 +178,38 @@ str genFormUpdate(block(list[AQuestion] quests), str parId) {
 
 str genFormUpdate(ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock), str parId) {
 	ifC += 1;
-	str ifId = "<parId>:@ifBlock<ifC>";
-	str elseId = "<parId>:@elseBlock<ifC>";	
-	return  "var ifBl = document.getElementById(\"<ifId>\");
-			'var elseBl = document.getElementById(\"<elseId>\");
+	str ifId = "<parId>:$ifBlock<ifC>";
+	str elseId = "<parId>:$elseBlock<ifC>";	
+	str ifBl = "$ifBl<ifC>";
+	str elseBl = "$elseBl<ifC>";
+	return  "var <ifBl> = document.getElementById(\"<ifId>\");
+			'var <elseBl> = document.getElementById(\"<elseId>\");
 			'if (<genExpr(guard)>) {
 			'	<genFormUpdate(ifBlock, ifId)>
-			'	ifBl.style.display = \"block\";
-			'	elseBl.style.display = \"none\";
+			'	<ifBl>.style.display = \"block\";
+			'	<elseBl>.style.display = \"none\";
 			'} else {
 			'	<genFormUpdate(elseBlock, elseId)>
-			'	ifBl.style.display = \"none\";
-			'	elseBl.style.display = \"block\";
+			'	<ifBl>.style.display = \"none\";
+			'	<elseBl>.style.display = \"block\";
 			'}\n";
 }
 
-str genFormUpdate(ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock), str parId) {
+str genFormUpdate(ifThen(AExpr guard, AQuestion ifBlock), str parId) {
 	ifC += 1;
-	str ifId = "<parId>:@ifBlock<ifC>";
-	return  "var ifBl = document.getElementById(\"<ifId>\");
+	str ifId = "<parId>:$ifBlock<ifC>";
+	str ifBl = "$ifBl<ifC>";
+	return  "var <ifBl> = document.getElementById(\"<ifId>\");
 			'if (<genExpr(guard)>) {
 			'	<genFormUpdate(ifBlock, ifId)>
-			'	ifBl.style.display = \"block\";
+			'	<ifBl>.style.display = \"block\";
 			'} else {
-			'	ifBl.style.display = \"none\";
+			'	<ifBl>.style.display = \"none\";
 			'}\n";
 }
 
 str genFormUpdate(AForm f) {
-	str updates = "";
-	for (q <- f.questions) {
-		updates += genFormUpdate(q, "form");
-	}
+	str updates = ("" | it + genFormUpdate(q, "form") | q <- f.questions);
 	return "function updateForm() {\n console.log(\"updating\"); \n<updates>}\n";
 }
 
