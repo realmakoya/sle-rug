@@ -30,6 +30,6 @@ Use uses(AForm f) {
 }
 
 Def defs(AForm f) {
-  return { <varId.name, q.src> | /q:question(_, AId varId, _) := f} +
-  			{<varId.name, q.src> |/q:compQuestion(_, AId varId, _, _) := f}; //TODO: simplify, add WHOLE q def
+  return { <varId.name, varId.src> | /question(_, AId varId, _) := f} +
+  			{<varId.name, varId.src> |/compQuestion(_, AId varId, _, _) := f}; //TODO: simplify, add WHOLE q def
 }

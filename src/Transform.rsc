@@ -4,7 +4,10 @@ import Syntax;
 import Resolve;
 import AST;
 
+extend lang::std::Id;
+
 import IO;
+import ParseTree;
 
 /* 
  * Transforming QL forms
@@ -30,6 +33,12 @@ import IO;
  *
  */
  
+ 
+// Flattening: Normalises the QL Form into the specified if-then format seen above.
+// Uses pattern-based function dispatch to recursively flatten nested if/if-else statements and transform
+// questions/computed questions. A visit statement or other pattern-based methodswith an insert action 
+// could have been used as well, but I was not sure how to propagate the guard in this case.
+
 list[AQuestion] flattenQ(i: ifThen(AExpr guard, AQuestion ifBlock), AExpr prevGuard) {
 	list[AQuestion] ifBl = flattenQ(ifBlock, and(prevGuard, guard));
 	return ifBl;
@@ -38,27 +47,27 @@ list[AQuestion] flattenQ(i: ifThen(AExpr guard, AQuestion ifBlock), AExpr prevGu
 list[AQuestion] flattenQ(ie: ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock), AExpr prevGuard) {
 	list[AQuestion] ifBl = flattenQ(ifBlock, and(prevGuard, guard));
 	list[AQuestion] elseBl = flattenQ(elseBlock, and(prevGuard, not(guard)));
-	return ifBl + elseBl; //TODO: best
+	return ifBl + elseBl; 
 }
 
-list[AQuestion] flattenQ(bl: block(list[AQuestion] quests), AExpr guard) {
+list[AQuestion] flattenQ(block(list[AQuestion] quests), AExpr guard) {
 	list[AQuestion] blQs = ([] | it + flattenQ(q, guard) | q <- quests);
-	return blQs; //TODO: best...
+	return blQs; 
 }
 
 AQuestion flattenQ(cq: compQuestion, AExpr guard) {
-	return ifThen(guard, block([cq])); //TODO: best way?
+	return ifThen(guard, block([cq])); 
 }
 
 AQuestion flattenQ(q: question, AExpr guard) {
-	return ifThen(guard, block([q])); //TODO: best way?
+	return ifThen(guard, block([q]));
 }
  
-// Go through 
+
 AForm flatten(AForm f) {
 	list[AQuestion] flattened = [];
 	for (q <- f.questions) {
-		flattened += flattenQ(q, boollit(true)); 
+		flattened += flattenQ(q, boollit(true)); // if(true) is default guard
 	}
 	f.questions = flattened;
 	return f;
@@ -71,8 +80,24 @@ AForm flatten(AForm f) {
  *
  */
  
+ set[loc] toRename(loc useOrDef, UseDef useDef) {
+ 	loc def = |tmp:///|;
+ 	if (<useOrDef, loc d> <- useDef) {
+ 		def = d;
+ 	} else {
+ 		def = useOrDef;
+ 	}
+ 	set[loc] toRenameLs = {use | <loc use, loc d> <- useDef, d == def} + def;
+ 	return toRenameLs;
+ }
+ 
  start[Form] rename(start[Form] f, loc useOrDef, str newName, UseDef useDef) {
-   return f; 
+   // Check if it's a use or definining occurence
+   set[loc] toRenameLs = toRename(useOrDef, useDef);
+   return visit(f) {
+   	case Id x => [Id] newName
+   		when x@\loc in toRenameLs
+   }
  } 
  
  
