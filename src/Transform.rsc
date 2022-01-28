@@ -6,7 +6,6 @@ import AST;
 
 extend lang::std::Id;
 
-import IO;
 import ParseTree;
 
 /* 
@@ -82,6 +81,7 @@ AForm flatten(AForm f) {
  
  set[loc] toRename(loc useOrDef, UseDef useDef) {
  	loc def = |tmp:///|;
+ 	// Get defining occurence
  	if (<useOrDef, loc d> <- useDef) {
  		def = d;
  	} else {
@@ -91,12 +91,12 @@ AForm flatten(AForm f) {
  	return toRenameLs;
  }
  
+
  start[Form] rename(start[Form] f, loc useOrDef, str newName, UseDef useDef) {
-   // Check if it's a use or definining occurence
    set[loc] toRenameLs = toRename(useOrDef, useDef);
    return visit(f) {
    	case Id x => [Id] newName
-   		when x@\loc in toRenameLs
+   		when x@\loc in toRenameLs  // Since all locations in UseDef refer to the ACTUAL ID decl, can just do this
    }
  } 
  
