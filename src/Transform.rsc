@@ -4,6 +4,8 @@ import Syntax;
 import Resolve;
 import AST;
 
+import IO;
+
 /* 
  * Transforming QL forms
  */
@@ -28,8 +30,38 @@ import AST;
  *
  */
  
+list[AQuestion] flattenQ(i: ifThen(AExpr guard, AQuestion ifBlock), AExpr prevGuard) {
+	list[AQuestion] ifBl = flattenQ(ifBlock, and(prevGuard, guard));
+	return ifBl;
+}
+ 
+list[AQuestion] flattenQ(ie: ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock), AExpr prevGuard) {
+	list[AQuestion] ifBl = flattenQ(ifBlock, and(prevGuard, guard));
+	list[AQuestion] elseBl = flattenQ(elseBlock, and(prevGuard, not(guard)));
+	return ifBl + elseBl; //TODO: best
+}
+
+list[AQuestion] flattenQ(bl: block(list[AQuestion] quests), AExpr guard) {
+	list[AQuestion] blQs = ([] | it + flattenQ(q, guard) | q <- quests);
+	return blQs; //TODO: best...
+}
+
+AQuestion flattenQ(cq: compQuestion, AExpr guard) {
+	return ifThen(guard, block([cq])); //TODO: best way?
+}
+
+AQuestion flattenQ(q: question, AExpr guard) {
+	return ifThen(guard, block([q])); //TODO: best way?
+}
+ 
+// Go through 
 AForm flatten(AForm f) {
-  return f; 
+	list[AQuestion] flattened = [];
+	for (q <- f.questions) {
+		flattened += flattenQ(q, boollit(true)); 
+	}
+	f.questions = flattened;
+	return f;
 }
 
 /* Rename refactoring:
