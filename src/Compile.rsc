@@ -19,7 +19,8 @@ import lang::html5::DOM; // see standard library
  * - if needed, use the name analysis to link uses to definitions
  */
 
- int ifC = 0;
+// Keeps track of nested if-statements (counts them; so each if will have a unique ID).
+int ifC = 0;
 
 void compile(AForm f) {
   writeFile(f.src[extension="js"].top, form2js(f));
@@ -50,9 +51,12 @@ HTML5Node genNode(block(list[AQuestion] quests), str parId) {
 	for (q <- quests) {
 		subQuests += genNode(q, parId);
 	}
-	return div(subQuests); //TODO: name?
+	return div(subQuests);
 }
 
+// Use "$" to start for non-source identifiers
+// Make use of an "id hierarchy": eg. $form:$ifBlock1:$ifBlock2. Allows for uniquely identifying HTML sections
+// to show/hide/use for updates
 HTML5Node genNode(ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock), str parId) {
 	ifC += 1;
 	str ifId = parId + ":" + "$ifBlock<ifC>";
@@ -78,9 +82,9 @@ default HTML5Node genNode(AQuestion q) {
 list[value] genForm(AForm f) {
 	list[value] elems = [id(f.name)];
 	for (q <- f.questions) {
-		elems += genNode(q, "$form");
+		elems += genNode(q, "$form"); 
 	}
-	elems += button("Submit", \type("button"), onclick("submitForm()"));
+	elems += button("Submit", \type("button"), onclick("submitForm()")); //Submit function provides JSON representation of question vals
 	return elems;
 }
 
@@ -103,11 +107,10 @@ str getDefaultType(AType varType) {
 }
 
 str initVars(RefGraph refGraph) {
-	set[str] varDecls = {};
+	set[str] varDecls = {}; //Use set to avoid duplicate declarations with repeated questions with same name
 	for (def <- refGraph<1>) {
 		varDecls += "var <def.name>;\n";
 	}
-	//varDecl += "\n";
 	return ("" | it + varDecl | varDecl <- varDecls) + "\n";
 }
 
@@ -132,14 +135,6 @@ str genExpr(AExpr expr) {
 		case and(AExpr lhs, AExpr rhs): return "<genExpr(lhs)> && <genExpr(rhs)>";
 		case or(AExpr lhs, AExpr rhs): return "<genExpr(lhs)> || <genExpr(rhs)>";
 	}
-}
-
-str compQuestions(AForm f) {
-	str updates = "";
-	visit(f) {
-		case compQuestion(_, AId varId, _, AExpr varExpr): updates += "<varId.name> = <genExpr(varExpr)>;\n";
-	}
-	return "function updateCompQuests() {\n <updates> }\n";
 }
 
 str genAssign(AId varId, AType varType, str parId) {
@@ -171,10 +166,10 @@ str genFormUpdate(compQuestion(_, AId varId, AType varType, AExpr varExpr), str 
 }
 
 str genFormUpdate(block(list[AQuestion] quests), str parId) {
-	//println(quests);
 	return ("" | it + genFormUpdate(q, parId) | q <- quests) + "\n";
 }
 
+// Will only update questions in an if/if-else block if the guard is satisfied; not just hiding them.
 str genFormUpdate(ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock), str parId) {
 	ifC += 1;
 	str ifId = "<parId>:$ifBlock<ifC>";
@@ -226,11 +221,6 @@ str genSubmitForm(RefGraph refGraph, str frmName) {
 
 str form2js(AForm f) {
   ifC = 0;
-  //str js = "const _input = document.querySelector(\'input\');
-  //		   '_input.addEventListener(\'input\', updateInput);
-  //		   'function updateInput(e) {
-  //		   '	updateForm();
-  //		   '}\n";
   RefGraph refGraph = resolve(f);
   return initVars(refGraph) + genFormUpdate(f) + genSubmitForm(refGraph, f.name);
 }

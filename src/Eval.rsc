@@ -42,7 +42,6 @@ VEnv initialEnv(AForm f) {
   	case compQuestion(_, AId varId, AType varType, _): venv += (varId.name: defaultValue(varType));
   }
   return venv;
-  //return (varId.name: );
 }
 
 
@@ -62,6 +61,7 @@ VEnv evalOnce(AForm f, Input inp, VEnv venv) {
   return newVEnv;
 }
 
+// For if/if-else: will only update the environment if the guard is satisfied for the specific branch
 VEnv eval(AQuestion q, Input inp, VEnv venv) {
   // evaluate conditions for branching,
   // evaluate inp and computed questions to return updated VEnv
@@ -78,7 +78,7 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
   		if (eval(guard, newVEnv).b) {
   			newVEnv = eval(ifBlock, inp, newVEnv);
   		} else {
-  			newVEnv = eval(elseBlock, inp, newVEnv); //TODO: update if not reach block?
+  			newVEnv = eval(elseBlock, inp, newVEnv); 
   		}
   	}
   	case ifThen(AExpr guard, AQuestion ifBlock): {
@@ -97,7 +97,7 @@ Value eval(AExpr e, VEnv venv) {
     case intlit(int intVal): return vint(intVal);
     case boollit(bool boolVal): return vbool(boolVal);
     case not(AExpr expr): return vbool(!eval(expr, venv).b);
-    case neg(AExpr expr): return vint(-eval(expr, venv).n); //TODO: works?
+    case neg(AExpr expr): return vint(-eval(expr, venv).n); 
     case mul(AExpr lhs, AExpr rhs): return vint(eval(lhs, venv).n * eval(rhs, venv).n);
     case div(AExpr lhs, AExpr rhs): return vint(eval(lhs, venv).n / eval(rhs, venv).n);
     case add(AExpr lhs, AExpr rhs): return vint(eval(lhs, venv).n + eval(rhs, venv).n);

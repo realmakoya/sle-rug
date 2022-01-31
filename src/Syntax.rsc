@@ -10,13 +10,12 @@ extend lang::std::Id;
 start syntax Form 
   = "form" Id "{" Question* "}"; 
 
-// TODO: question, computed question, block, if-then-else, if-then
 syntax Question
   = @Foldable Str Id ":" Type //TODO: str; Seperate production for Var?
   | @Foldable Str Id ":" Type "=" Expr 
   | @Foldable Block
   | @Foldable "if" "(" Expr ")" Block "else" Block
-  | @Foldable "if" "(" Expr ")" Block //TODO: foldable
+  | @Foldable "if" "(" Expr ")" Block
   ; 
   
 syntax Block
@@ -54,10 +53,10 @@ syntax Expr
 syntax Type
   = "string"
   | "integer"
-  | "boolean" //TODO: any things like !>>?
+  | "boolean" 
   ;  
   
-lexical Str = @category="StringLiteral" [\"] ![\"]* [\"]; ///TODO: better , !>> Not keyword?
+lexical Str = @category="StringLiteral" [\"] ![\"]* [\"]; 
 
 lexical Int = ([\-]?[1-9][0-9]*)|[0];
  
