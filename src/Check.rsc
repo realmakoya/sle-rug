@@ -3,10 +3,7 @@ module Check
 import AST;
 import Resolve;
 import Message; // see standard library
-import Set;
-import IO;
 
-//TODO: better showing of errors... show type of operands...
 
 data Type
   = tint()
@@ -34,13 +31,11 @@ Type getTypeFromAType(AType t){
   	case strType(): return tstr();
   	case intType(): return tint();
   	case boolType(): return tbool();
-  	default: return tunknown(); //TODO: best?
+  	default: return tunknown(); 
  }
 }
 
 set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
-  // TODO: ref to undefined questions, condition not boolean, invalid operand types to operator, duplicate quest diff type
-  // Warnings: Same label different questions, diff labels for occurences same question
   set[Message] outMsgs = {};
   for (q <- f.questions) {
   	outMsgs += check(q, tenv, useDef);
@@ -69,9 +64,11 @@ set[Message] checkDiffLabels(loc qLoc, str qName, str qLabel, TEnv tenv) {
 	return {};
 }
 
-// - produce an error if there are declared questions with the same name but different types.
-// - duplicate labels should trigger a warning 
-// - the declared type computed questions should match the type of the expression.
+// Checks:
+// - Error: same question name declared but different types
+// - Warning: duplicate labels (for different questions)
+// - Error: expression and computed question types don't match
+// - Warning: different label for same question
 set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   set[Message] outMsgs = {};
   switch(q) {
@@ -88,7 +85,7 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   		if (getTypeFromAType(varType) != typeOf(varExpr, tenv, useDef)) {
   			outMsgs += {error("Expression type not the same as computed question type", q.src)};
   		}
-  	} //TODO: other checks
+  	} 
   	case block(list[AQuestion] quests): { 
   		for (curQ <- quests) {
   			outMsgs += check(curQ, tenv, useDef); //Tried using reducer, didn't work...
@@ -106,7 +103,7 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   		outMsgs += check(guard, tenv, useDef);
   		outMsgs += check(ifBlock, tenv, useDef);
   		if (typeOf(guard, tenv, useDef) != tbool()) {
-  			outMsgs += {error("Guard must be of type boolean", guard.src)}; //TODO: code rep
+  			outMsgs += {error("Guard must be of type boolean", guard.src)}; 
   		}
   	}
   }
@@ -117,20 +114,20 @@ set[Message] checkBinaryOp(loc src, str typeName, Type \type, AExpr lhs, AExpr r
 	set[Message] outMsgs = {};
 	outMsgs += check(lhs, tenv, useDef);
 	outMsgs += check(rhs, tenv, useDef);
-	outMsgs += { error("Operands must be of the same type", src) | typeOf(lhs, tenv, useDef) != typeOf(rhs, tenv, useDef)};
-	//println("Type: <\type>, typeLHS: <typeOf(lhs, tenv, useDef)>, test: <\type != tunknown() && typeOf(lhs, tenv, useDef) != \type>");
-	outMsgs += { error("Operands must be of type: <typeName>", src) | \type != tunknown() && typeOf(lhs, tenv, useDef) != \type};
+	outMsgs += { error("Operands must be of the same type", src) | typeOf(lhs, tenv, useDef) != typeOf(rhs, tenv, useDef)}; // Checks if they're different
+	outMsgs += { error("Operands must be of type: <typeName>", src) | \type != tunknown() && typeOf(lhs, tenv, useDef) != \type}; // Checks they match the expected type
 	return outMsgs;
 }
 
 // Check operand compatibility with operators.
 // E.g. for an addition node add(lhs, rhs), 
 //   the requirement is that typeOf(lhs) == typeOf(rhs) == tint()
+// Checks also for use of undeclared question in expression, and unary operators.
 set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
   set[Message] msgs = {};
   switch (e) {
     case ref(AId x): 
-      msgs += { error("Undeclared question", x.src) | useDef[x.src] == {} }; //TODO: literals? 
+      msgs += { error("Undeclared question", x.src) | useDef[x.src] == {} }; 
     case not(AExpr x):
 	  msgs += { error("Can only apply \"!\" to a boolean", x.src) | typeOf(x, tenv, useDef) != tbool()};
 	case neg(AExpr x):
@@ -152,9 +149,9 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 	 case gteq(AExpr lhs, AExpr rhs):
 	  msgs += checkBinaryOp(e.src, "integer", tint(), lhs, rhs, tenv, useDef);
 	 case eql(AExpr lhs, AExpr rhs):
-	  msgs += checkBinaryOp(e.src, "", tunknown(), lhs, rhs, tenv, useDef); //TODO: better way
+	  msgs += checkBinaryOp(e.src, "", tunknown(), lhs, rhs, tenv, useDef); // Since eql/neq can be used on any data type, we use tunknown as a placeholder.
 	 case neq(AExpr lhs, AExpr rhs):
-	  msgs += checkBinaryOp(e.src, "", tunknown(), lhs, rhs, tenv, useDef); //TODO: better way
+	  msgs += checkBinaryOp(e.src, "", tunknown(), lhs, rhs, tenv, useDef); 
 	 case and(AExpr lhs, AExpr rhs):
 	  msgs += checkBinaryOp(e.src, "boolean", tbool(), lhs, rhs, tenv, useDef);
 	 case or(AExpr lhs, AExpr rhs):
@@ -163,6 +160,7 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
   return msgs; 
 }
 
+// Perhaps having a binop() ADT would have been more concise
 Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
   switch (e) {
     case ref(id(_, src = loc u)): {
@@ -205,8 +203,6 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
     case or(_, _):
       return tbool();	
   }
-  //println(e);
-  //println("unknown");
   return tunknown(); 
 }
 
