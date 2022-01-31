@@ -2,6 +2,7 @@ module Eval
 
 import AST;
 import Resolve;
+import IO;
 
 /*
  * Implement big-step semantics for QL
@@ -62,6 +63,7 @@ VEnv evalOnce(AForm f, Input inp, VEnv venv) {
 }
 
 // For if/if-else: will only update the environment if the guard is satisfied for the specific branch
+// Also cannot set computed question values directly, as they need to be calculated
 VEnv eval(AQuestion q, Input inp, VEnv venv) {
   // evaluate conditions for branching,
   // evaluate inp and computed questions to return updated VEnv
