@@ -23,8 +23,8 @@ alias TEnv = rel[loc def, str name, str label, Type \type];
 TEnv collect(AForm f) {
   TEnv outEnv = {};
   visit(f) {
-  	case q:question(str quest, AId varId, AType varType): outEnv += <q.src, varId.name, quest, getTypeFromAType(varType)>;
-  	case q:compQuestion(str quest, AId varId, AType varType, _): outEnv += <q.src, varId.name, quest, getTypeFromAType(varType)>;
+  	case question(str quest, AId varId, AType varType): outEnv += <varId.src, varId.name, quest, getTypeFromAType(varType)>;
+  	case compQuestion(str quest, AId varId, AType varType, _): outEnv += <varId.src, varId.name, quest, getTypeFromAType(varType)>;
   }
   return outEnv; 
 }
@@ -42,9 +42,7 @@ set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
   // TODO: ref to undefined questions, condition not boolean, invalid operand types to operator, duplicate quest diff type
   // Warnings: Same label different questions, diff labels for occurences same question
   set[Message] outMsgs = {};
-  //println("Here now!");
   for (q <- f.questions) {
-    //iprintln("Here!");
   	outMsgs += check(q, tenv, useDef);
   }
   return outMsgs; 
@@ -92,12 +90,9 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   		}
   	} //TODO: other checks
   	case block(list[AQuestion] quests): { 
-  		//println("Blocks!");
-  		//println("CurCheck: <quests>");
   		for (curQ <- quests) {
   			outMsgs += check(curQ, tenv, useDef); //Tried using reducer, didn't work...
   		}
-  		//println("After?");
   	}
   	case ifElse(AExpr guard, AQuestion ifBlock, AQuestion elseBlock): {
   		outMsgs += check(guard, tenv, useDef);
@@ -110,9 +105,7 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   	case ifThen(AExpr guard, AQuestion ifBlock): {
   		outMsgs += check(guard, tenv, useDef);
   		outMsgs += check(ifBlock, tenv, useDef);
-  		//println("Ifbloc: <ifBlock>");
   		if (typeOf(guard, tenv, useDef) != tbool()) {
-  		  	//println("<typeOf(guard, tenv, useDef)>");
   			outMsgs += {error("Guard must be of type boolean", guard.src)}; //TODO: code rep
   		}
   	}
@@ -124,7 +117,7 @@ set[Message] checkBinaryOp(loc src, str typeName, Type \type, AExpr lhs, AExpr r
 	set[Message] outMsgs = {};
 	outMsgs += check(lhs, tenv, useDef);
 	outMsgs += check(rhs, tenv, useDef);
-	outMsgs += { error("Operands must be of the same type", src) | typeOf(lhs, tenv, useDef) != typeOf(rhs, tenv,useDef)};
+	outMsgs += { error("Operands must be of the same type", src) | typeOf(lhs, tenv, useDef) != typeOf(rhs, tenv, useDef)};
 	//println("Type: <\type>, typeLHS: <typeOf(lhs, tenv, useDef)>, test: <\type != tunknown() && typeOf(lhs, tenv, useDef) != \type>");
 	outMsgs += { error("Operands must be of type: <typeName>", src) | \type != tunknown() && typeOf(lhs, tenv, useDef) != \type};
 	return outMsgs;
@@ -171,12 +164,9 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 }
 
 Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
-  //println("Expr: <e>");
   switch (e) {
     case ref(id(_, src = loc u)): {
-      //println("Ref! src = <u>");
       if (<u, loc d> <- useDef, <d, x, _, Type t> <- tenv) {
-        //println("Ref, type = <t>");
         return t;
       }
      }
@@ -215,6 +205,8 @@ Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
     case or(_, _):
       return tbool();	
   }
+  //println(e);
+  //println("unknown");
   return tunknown(); 
 }
 
