@@ -29,7 +29,7 @@ Value defaultValue(AType \type) {
 		case strType(): return vstr("");
 		case intType(): return vint(0);
 		case boolType(): return vbool(false);
-		default: return vstr(""); //TODO: best way?
+		default: return vstr(""); 
 	};
 }
   
